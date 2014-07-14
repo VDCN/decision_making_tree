@@ -36,13 +36,25 @@ def GetCusSexFromAddress2():  # get male address
     return result
 
 def LocationInResult(x,list):
-    for /////////////////////////////////////////////////////////////////////////////////i in range(len(list)):
+    for i in range(len(list)):
         #print "list[i][0]",list[i][0]
         if x == list[i][0]:
             return i
     return 0
         #else:
             #return 0
+
+def AddAdressToResult(result,Address):
+    count = 0
+    for row in Address: #2.将address放进result
+        location = LocationInResult(row[0], result)  #print "row[0]",row[0]
+        if(location):
+            #print row[0],'and', result[location][0]  #check consistency
+            result[location][1] = 2
+            count =count+1
+        else:
+            result.append([row[0], 2])
+    print 'Overlap: ',count
 
 
 CusCount = GetCustomerCount()
@@ -54,30 +66,18 @@ Address = GetCusSexFromAddress()
 
 Address2 = GetCusSexFromAddress2()
 print 'len-Address:',len(Address)
-print 'len-Address2:',len(Address)
-result = []  #最终结果在result里
-for row in Detail:
+print 'len-Address2:',len(Address2)
+result = []
+for row in Detail:  #最终结果在result里，1.将detail放进result，并且转成列表的格式
     result.append(list(row))
 #print "result",result
 print "Detail result——len", len(result)
 #print result
-
-temp = []
-count = 0
-for row in Address:
-    #print "row[0]",row[0]
-    location = LocationInResult(row[0], result)
-    if(location):
-        #print row[0],'and', result[location][0]  #check consistency
-        result[location][1] = 2
-        count =count+1
-
-    else:
-        result.append([row[0], 2])
+AddAdressToResult(result,Address)  #2.将Adress放进result（女)
 print "Total result——len", len(result)
-print count
 
-for row in result:
+
+for row in result:     #为什么要把qq的去掉
     sql= """
     SELECT email
     FROM fly_customer
@@ -92,7 +92,6 @@ for row in result:
         result.remove(row)
 
 print "Total result without sf——len", len(result)
-print count
 
 
 
