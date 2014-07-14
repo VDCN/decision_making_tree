@@ -1,18 +1,13 @@
 # coding=utf-8
 __author__ = 'hexiaoyu'
 import MySQLdb
-
 import database
-
 db = database.Connection(host='192.168.30.239',database='flyphp',user='dev_query',password='OWl32ud0zW8uGLENcNu_')
 
 _db = {
     'flyphp': database.Connection(host='192.168.30.239',database='flyphp',user='dev_query',password='OWl32ud0zW8uGLENcNu_'),
-    'local ': database.Connection(host='localhost',database='flyphp',user='root',password='')
+    'local': database.Connection(host='localhost',database='decision_making_tree',user='root',password='')
 }
-
-_db['flyphp']
-_db['local']
 
 def GetCustomerCount():
     sql= """select TABLE_ROWS from information_schema.TABLES
@@ -23,7 +18,7 @@ def GetCustomerCount():
 
 def GetCusSexFromDetail():
     sql= """SELECT customer_id,sex FROM fly_customer_detail where sex <> 0"""
-    result = db.query(sql)
+    result = _db['flyphp'].query(sql)
     return result
 
 def GetCusSexFromAddress():  # get female address
@@ -32,7 +27,7 @@ def GetCusSexFromAddress():  # get female address
     FROM fly_customer_address
     WHERE realname LIKE '%%小姐%%' OR realname LIKE '%%女士%%'
     """
-    result = db.query(sql)
+    result = _db['flyphp'].query(sql)
     return result
 
 def GetCusSexFromAddress2():  # get male address
@@ -40,7 +35,7 @@ def GetCusSexFromAddress2():  # get male address
     SELECT DISTINCT customer_id
     FROM fly_customer_address
     WHERE realname LIKE '%%先生%%'"""
-    result = db.query(sql)
+    result = _db['flyphp'].query(sql)
     return result
 
 def LocationInResult(x,list):
@@ -77,12 +72,12 @@ CusCount = GetCustomerCount()
 print "customer count is %s " % CusCount
 
 Detail = GetCusSexFromDetail()
-print 'len-Detail:',len(Detail)
 Address = GetCusSexFromAddress()
-
 Address2 = GetCusSexFromAddress2()
+print 'len-Detail:',len(Detail)
 print 'len-Address:',len(Address)
 print 'len-Address2:',len(Address2)
+
 result = []
 for row in Detail:  #最终结果在result里，1.将detail放进result，并且转成列表的格式
     result.append(list(row))
@@ -100,7 +95,7 @@ for row in result:     #为什么要把qq的去掉
     FROM fly_customer
     WHERE customer_id=%s
     """ % row[0]
-    check_sf = db.query(sql)
+    check_sf = _db['flyphp'].query(sql)
     # print check_sf
     # print check_sf[0] #IndexError: tuple index out of range
     # print check_sf[0][0]
@@ -110,23 +105,32 @@ for row in result:     #为什么要把qq的去掉
 
 print "Total result without sf——len", len(result)
 
-customer count is 384767
-len-Detail: 5407
-len-Address: 3636
-len-Address2: 2224
-Detail result——len 5407
-Overlap:  511
-Final result——len 10756
-Total result without sf——len 10317
+d = _db['local'].query("SELECT VERSION()")  #测试连接上了。。
+print d
 
-# for row in result:     #为什么要把qq的去掉
-#     sql= """
-#     SELECT email,customer_id,realname
-#     FROM fly_customer
-#     WHERE customer_id=%s
-#     """ % row[0]
-#     check = db.query(sql)
-#     print check
+_db['local'].query("DROP TABLE IF EXISTS customer_sex") #创建数据表，如果已经存在删除表。
+sql = """CREATE TABLE customer_sex (
+         customer_id  int,
+         sex  int )"""
+d = _db['local'].query(sql)
+
+for row in result:#将数据插入数据库
+    print "row[0],row[1]:",row[0],row[1]
+    d = _db['local'].query(sql)
+    sql = """INSERT INTO customer_sex
+         (customer_id,sex)
+         VALUES ('%d','%d')""" % ( row[0],row[1] )
+    d = _db['local'].query(sql)
+
+# customer count is 384767
+# len-Detail: 5407
+# len-Address: 3636
+# len-Address2: 2224
+# Detail result——len 5407
+# Overlap:  511
+# Final result——len 10756
+# Total result without sf——len 10317
+
 
 
 
