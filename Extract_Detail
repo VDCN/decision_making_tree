@@ -1,0 +1,66 @@
+# coding=utf-8
+__author__ = 'hexiaoyu'
+import MySQLdb
+import database
+db = database.Connection(host='192.168.30.239',database='flyphp',user='dev_query',password='OWl32ud0zW8uGLENcNu_')
+
+_db = {
+    'flyphp': database.Connection(host='192.168.30.239',database='flyphp',user='dev_query',password='OWl32ud0zW8uGLENcNu_'),
+    'local': database.Connection(host='localhost',database='decision_making_tree',user='root',password='')
+}
+
+d = _db['local'].query("SELECT VERSION()")  #测试连接上了。。
+print d
+
+_db['local'].query("DROP TABLE IF EXISTS customer_detail") #创建数据表，如果已经存在删除表。
+sql = """
+     CREATE TABLE customer_detail (
+     customer_id  int,
+     sex  int,
+     realname CHAR(20),
+     mail CHAR(50)
+     )DEFAULT CHARSET=utf8 """
+d = _db['local'].query(sql)
+
+sql= """SELECT customer_id,sex FROM customer_sex""" #从本地把数据读取出来
+temp = _db['local'].query(sql)
+result = []
+for row in temp:  #最终结果在result里，1.将detail放进result，并且转成列表的格式
+    result.append(list(row))
+    print list(row)
+
+for row in result:#将数据插入数据库
+    #先从flyphp把详细的信息读取出来
+    #2.realname，注意并不是所有的人都有realname
+    sql= """
+    SELECT realname
+    FROM fly_customer_address
+    WHERE customer_id=%s
+    """ % row[0]
+    check_realname = _db['flyphp'].query(sql)
+    if check_realname:
+        row.append(check_realname[0][0])
+    else:
+        row.append([])
+    # print "check_realname[0][0]_type",type(check_realname)
+    #3.email
+    sql= """
+    SELECT email
+    FROM fly_customer
+    WHERE customer_id=%s
+    """ % row[0]
+    check_email = _db['flyphp'].query(sql)
+    if check_email:
+        row.append(check_email[0][0])
+    else:
+        row.append([])
+    print "row[0]",row[0]
+    print row[1]
+    print row[2]
+    print row[3]
+    print row ##
+    # j将数据写入localhost,customer_detail
+    sql = """INSERT INTO customer_detail
+         (customer_id,sex,realname,mail)
+         VALUES ('%d','%d','%s','%s')""" % ( row[0],row[1],row[2],row[3])
+    d = _db['local'].query(sql)
